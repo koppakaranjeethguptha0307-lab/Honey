@@ -2,6 +2,7 @@
   "name": "honey-chain-backend",
   "version": "1.0.0",
   "description": "Honey Chain - Blockchain-based honey traceability and smart beekeeping management system backend",
+  "author": "koppakaranjeethguptha0307-lab <koppakaranjeethguptha0307@gmail.com>",
   "main": "server/index.js",
   "type": "commonjs",
   "scripts": {
