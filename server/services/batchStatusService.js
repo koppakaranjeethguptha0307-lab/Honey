@@ -74,7 +74,7 @@ const validateProcessingCreationTransition = (batch, activeProcessingRecord) => 
   const currentStatus = String(batch.status || '').toUpperCase().trim();
   const qualityStatus = String(batch.quality_status || '').toUpperCase().trim();
 
-  if (currentStatus !== 'QUALITY_APPROVED' && qualityStatus !== 'APPROVED') {
+  if (!['QUALITY_TESTED', 'QUALITY_APPROVED'].includes(currentStatus) && qualityStatus !== 'APPROVED') {
     return {
       canTransition: false,
       reason: `Batch ${batch.batch_id} is in status '${batch.status}' (quality_status: '${batch.quality_status}'). A batch is eligible for processing ONLY if quality_status is APPROVED.`,

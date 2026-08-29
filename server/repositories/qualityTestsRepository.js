@@ -131,10 +131,10 @@ const approveQualityTestTx = (testId, batch, remarks, inspectorName, farmLocatio
     `);
     updateTestStmt.run(finalRemarks, nowIso, testId);
 
-    // 2. Update honey_batches status
+    // 2. Update honey_batches status to QUALITY_TESTED & quality_status to APPROVED
     const updateBatchStmt = db.prepare(`
       UPDATE honey_batches
-      SET status = 'QUALITY_APPROVED',
+      SET status = 'QUALITY_TESTED',
           quality_status = 'APPROVED',
           updated_at = ?
       WHERE batch_id = ?

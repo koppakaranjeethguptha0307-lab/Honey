@@ -13,11 +13,22 @@ const STAGES = [
 export function StatusProgressStepper({ currentStatus }) {
   const currentUpper = String(currentStatus || '').toUpperCase().trim();
   
-  let activeIndex = STAGES.findIndex(s => s.key === currentUpper);
-  if (activeIndex === -1) {
-    if (currentUpper === 'APPROVED') activeIndex = 1;
-    else if (currentUpper === 'COMPLETED') activeIndex = 3;
-    else activeIndex = 0;
+  let activeIndex = -1;
+  if (['HARVESTED'].includes(currentUpper)) {
+    activeIndex = 0;
+  } else if (['QUALITY_TESTED', 'QUALITY_APPROVED', 'APPROVED', 'QUALITY_TESTING'].includes(currentUpper)) {
+    activeIndex = 1;
+  } else if (['PROCESSING', 'PROCESSED'].includes(currentUpper)) {
+    activeIndex = 2;
+  } else if (['PACKAGING', 'PACKAGED'].includes(currentUpper)) {
+    activeIndex = 3;
+  } else if (['IN_TRANSIT', 'PICKED_UP', 'DISPATCHED'].includes(currentUpper)) {
+    activeIndex = 4;
+  } else if (['DELIVERED', 'COMPLETED'].includes(currentUpper)) {
+    activeIndex = 5;
+  } else {
+    activeIndex = STAGES.findIndex(s => s.key === currentUpper);
+    if (activeIndex === -1) activeIndex = 0;
   }
 
   return (

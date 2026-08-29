@@ -19,6 +19,7 @@ export function StatusBadge({ status, type = 'general' }) {
       Icon = Award;
       break;
     case 'QUALITY_TESTED':
+    case 'QUALITY_APPROVED':
     case 'APPROVED':
     case 'PASSED':
     case 'EXCELLENT':
