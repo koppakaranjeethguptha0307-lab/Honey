@@ -36,6 +36,8 @@ export function BatchesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [qrModalBatch, setQrModalBatch] = useState(null);
   const [qrData, setQrData] = useState(null);
+  const [qrError, setQrError] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     farm_id: '',
@@ -121,10 +123,15 @@ export function BatchesPage() {
   const handleOpenQRModal = async (batchId) => {
     setQrModalBatch(batchId);
     setQrData(null);
+    setQrError(null);
+    setQrLoading(true);
     const res = await getBatchQR(batchId);
     if (res.success) {
       setQrData(res.data);
+    } else {
+      setQrError(res.error || 'QR code is generated upon bottling/packaging completion.');
     }
+    setQrLoading(false);
   };
 
   return (
@@ -372,14 +379,40 @@ export function BatchesPage() {
       {/* QR Code Identity Modal */}
       <Modal
         isOpen={Boolean(qrModalBatch)}
-        onClose={() => setQrModalBatch(null)}
+        onClose={() => {
+          setQrModalBatch(null);
+          setQrData(null);
+          setQrError(null);
+        }}
         title={`Batch QR Identity — ${qrModalBatch}`}
       >
-        <QRDisplay 
-          batchId={qrModalBatch} 
-          qrCodeUrl={qrData?.qr_code_data_url || qrData?.qr_code_url} 
-          publicVerifyUrl={qrData?.verification_path ? `${window.location.origin}${qrData.verification_path}` : qrData?.public_verify_url} 
-        />
+        {qrLoading ? (
+          <LoadingSpinner message="Generating QR identity..." />
+        ) : qrData ? (
+          <QRDisplay 
+            batchId={qrModalBatch} 
+            qrCodeUrl={qrData?.qr_code_data_url || qrData?.qr_code_url} 
+            publicVerifyUrl={qrData?.verification_path ? `${window.location.origin}${qrData.verification_path}` : qrData?.public_verify_url} 
+          />
+        ) : (
+          <div className="p-5 bg-stone-900/60 rounded-xl border border-stone-800 space-y-3 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto">
+              <QrCode className="w-6 h-6" />
+            </div>
+            <h4 className="text-sm font-bold text-stone-200 font-['Outfit']">QR Identity Pending Packaging</h4>
+            <p className="text-xs text-stone-400 leading-relaxed max-w-sm mx-auto">
+              {qrError || 'Public customer QR codes and verification paths are officially generated when a batch completes Bottling & Packaging.'}
+            </p>
+            <div className="pt-2 flex justify-center gap-2">
+              <Link
+                to="/packaging"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-950 bg-amber-500 hover:bg-amber-400 rounded-lg transition-all"
+              >
+                Go to Packaging Workflow
+              </Link>
+            </div>
+          </div>
+        )}
       </Modal>
 
     </div>
