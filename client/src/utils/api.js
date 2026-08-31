@@ -197,3 +197,9 @@ export const deliverTransportation = (id, data = {}) => apiFetch(`/api/transport
 
 // Public Verification
 export const verifyBatchPublic = (batchId) => apiFetch(`/verify/${batchId}`);
+
+// Authentication
+export const loginUser = (credentials) => apiFetch('/api/auth/login', { method: 'POST', body: credentials });
+export const registerUser = (userData) => apiFetch('/api/auth/register', { method: 'POST', body: userData });
+export const getCurrentUser = (token) => apiFetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+

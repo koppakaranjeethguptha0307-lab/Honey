@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const RoleContext = createContext();
 
@@ -12,14 +12,59 @@ export const ROLES = {
 
 export function RoleProvider({ children }) {
   const [currentRole, setCurrentRole] = useState(ROLES.ADMIN);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('hc_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('hc_token') || null);
 
   const setRoleById = (roleId) => {
     const found = Object.values(ROLES).find(r => r.id === roleId);
     if (found) setCurrentRole(found);
   };
 
+  useEffect(() => {
+    if (user && user.role) {
+      setRoleById(user.role);
+    }
+  }, [user]);
+
+  const loginAuth = (userData, authToken) => {
+    setUser(userData);
+    setToken(authToken);
+    if (authToken) localStorage.setItem('hc_token', authToken);
+    if (userData) {
+      localStorage.setItem('hc_user', JSON.stringify(userData));
+      if (userData.role) setRoleById(userData.role);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('hc_token');
+    localStorage.removeItem('hc_user');
+    setCurrentRole(ROLES.ADMIN);
+  };
+
   return (
-    <RoleContext.Provider value={{ currentRole, setCurrentRole, setRoleById, ROLES }}>
+    <RoleContext.Provider
+      value={{
+        currentRole,
+        setCurrentRole,
+        setRoleById,
+        ROLES,
+        user,
+        token,
+        isAuthenticated: !!user,
+        loginAuth,
+        logout,
+      }}
+    >
       {children}
     </RoleContext.Provider>
   );

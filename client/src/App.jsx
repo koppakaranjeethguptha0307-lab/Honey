@@ -7,6 +7,9 @@ import { Footer } from './components/common/Footer';
 // Pages
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { RoleChooserPage } from './pages/RoleChooserPage';
+import { RoleLoginPage } from './pages/RoleLoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FarmsPage } from './pages/FarmsPage';
 import { HivesPage } from './pages/HivesPage';
@@ -28,8 +31,24 @@ export function App() {
           <Navbar />
           <main className="flex-1">
             <Routes>
+              {/* Public Core Routes */}
               <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/verify/:batchId" element={<PublicVerifyPage />} />
+
+              {/* Authentication Routes */}
+              <Route path="/signin" element={<RoleChooserPage />} />
+              <Route path="/login" element={<RoleChooserPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/signup" element={<RegisterPage />} />
+              
+              {/* Role-Specific Sign-In Routes */}
+              <Route path="/signin/beekeeper" element={<RoleLoginPage roleKey="beekeeper" />} />
+              <Route path="/signin/quality-inspector" element={<RoleLoginPage roleKey="quality-inspector" />} />
+              <Route path="/signin/transporter" element={<RoleLoginPage roleKey="transporter" />} />
+              <Route path="/signin/customer" element={<RoleLoginPage roleKey="customer" />} />
+              <Route path="/signin/:roleId" element={<RoleLoginPage />} />
+
+              {/* Existing Supply Chain Module Routes */}
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/farms" element={<FarmsPage />} />
               <Route path="/hives" element={<HivesPage />} />
@@ -40,8 +59,8 @@ export function App() {
               <Route path="/processing" element={<ProcessingPage />} />
               <Route path="/packaging" element={<PackagingPage />} />
               <Route path="/transportation" element={<TransportationPage />} />
-              <Route path="/verify/:batchId" element={<PublicVerifyPage />} />
               <Route path="/blockchain" element={<BlockchainPage />} />
+              
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

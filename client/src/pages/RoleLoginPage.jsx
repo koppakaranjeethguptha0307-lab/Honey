@@ -1,13 +1,61 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Hexagon, Lock, Mail, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
+import { Hexagon, Lock, Mail, Eye, EyeOff, ArrowLeft, Loader2, MapPin, Beaker, Truck, User, ShieldAlert } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
 import { loginUser } from '../utils/api';
 import { ErrorAlert } from '../components/common/ErrorAlert';
 
-export function LoginPage() {
+const ROLE_CONFIGS = {
+  beekeeper: {
+    id: 'beekeeper',
+    heading: 'BEEKEEPER SIGN IN',
+    subtitle: 'Access apiary analytics, hives, sensors, and honey harvest records.',
+    icon: MapPin,
+    redirectPath: '/farms',
+    accentColor: 'text-amber-400',
+  },
+  'quality-inspector': {
+    id: 'inspector',
+    heading: 'QUALITY INSPECTOR SIGN IN',
+    subtitle: 'Conduct purity testing, moisture analysis, and issue batch lab approvals.',
+    icon: Beaker,
+    redirectPath: '/quality',
+    accentColor: 'text-blue-400',
+  },
+  inspector: {
+    id: 'inspector',
+    heading: 'QUALITY INSPECTOR SIGN IN',
+    subtitle: 'Conduct purity testing, moisture analysis, and issue batch lab approvals.',
+    icon: Beaker,
+    redirectPath: '/quality',
+    accentColor: 'text-blue-400',
+  },
+  transporter: {
+    id: 'transporter',
+    heading: 'TRANSPORTER SIGN IN',
+    subtitle: 'Manage batch pickups, transit updates, and delivery confirmations.',
+    icon: Truck,
+    redirectPath: '/transportation',
+    accentColor: 'text-emerald-400',
+  },
+  customer: {
+    id: 'customer',
+    heading: 'CUSTOMER SIGN IN',
+    subtitle: 'Explore honey batch transparency and verified supply chain records.',
+    icon: User,
+    redirectPath: '/dashboard',
+    accentColor: 'text-purple-400',
+  },
+};
+
+export function RoleLoginPage({ roleKey: defaultRoleKey }) {
   const navigate = useNavigate();
+  const params = useParams();
   const { loginAuth } = useRole();
+
+  const roleParam = params.roleId || defaultRoleKey || 'beekeeper';
+  const roleConfig = ROLE_CONFIGS[roleParam] || ROLE_CONFIGS.beekeeper;
+  const RoleIcon = roleConfig.icon;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,27 +94,24 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await loginUser({ email: email.trim(), password });
+      // Pass expected_role to enforce backend role matching
+      const res = await loginUser({
+        email: email.trim(),
+        password,
+        expected_role: roleConfig.id,
+      });
+
       setIsSubmitting(false);
 
       if (!res.success) {
-        setApiError(res.error || 'Invalid credentials.');
+        setApiError(res.error || 'Sign in failed. Please check credentials.');
         return;
       }
 
       loginAuth(res.user, res.token);
 
-      // Role-based navigation redirect
-      const userRole = (res.user?.role || '').toLowerCase();
-      if (userRole === 'beekeeper') {
-        navigate('/farms');
-      } else if (userRole === 'inspector') {
-        navigate('/quality');
-      } else if (userRole === 'transporter') {
-        navigate('/transportation');
-      } else {
-        navigate('/dashboard');
-      }
+      // Redirect into existing role-specific page
+      navigate(roleConfig.redirectPath);
     } catch (err) {
       setIsSubmitting(false);
       setApiError('A network error occurred. Please try again.');
@@ -75,14 +120,20 @@ export function LoginPage() {
 
   return (
     <div className="min-h-[80vh] py-12 px-4 sm:px-6 lg:px-8 max-w-md mx-auto flex flex-col justify-center">
-      {/* Back to Home Link */}
-      <div className="mb-6">
+      {/* Back Link */}
+      <div className="mb-6 flex items-center justify-between">
         <Link
-          to="/"
+          to="/signin"
           className="inline-flex items-center gap-2 text-xs text-stone-400 hover:text-amber-400 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
+          <span>Change Role Portal</span>
+        </Link>
+        <Link
+          to="/"
+          className="text-xs text-stone-500 hover:text-stone-300 transition-colors"
+        >
+          Home
         </Link>
       </div>
 
@@ -91,7 +142,7 @@ export function LoginPage() {
         {/* Glow background accent */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-        {/* Branding Header */}
+        {/* Branding & Role Header */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2.5 group mb-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-stone-950 font-bold shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
@@ -106,8 +157,13 @@ export function LoginPage() {
               </span>
             </div>
           </Link>
-          <h1 className="text-xl font-bold text-stone-100 font-['Outfit'] mt-1">Welcome Back</h1>
-          <p className="text-xs text-stone-400 mt-1">Sign in to continue to Honey Chain</p>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-900 border border-stone-800 text-xs font-mono font-semibold text-stone-300 mt-2 mb-2">
+            <RoleIcon className={`w-3.5 h-3.5 ${roleConfig.accentColor}`} />
+            <span>{roleConfig.heading}</span>
+          </div>
+
+          <p className="text-xs text-stone-400 leading-relaxed max-w-xs mx-auto">{roleConfig.subtitle}</p>
         </div>
 
         {/* Error Alert Display */}
@@ -132,9 +188,7 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (validationErrors.email) {
-                    setValidationErrors((prev) => ({ ...prev, email: null }));
-                  }
+                  if (validationErrors.email) setValidationErrors((prev) => ({ ...prev, email: null }));
                 }}
                 placeholder="name@example.com"
                 className={`w-full pl-9 pr-3 py-2.5 text-xs bg-stone-900/90 border rounded-xl text-stone-100 placeholder-stone-500 focus:outline-none transition-all ${
@@ -162,9 +216,7 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  if (validationErrors.password) {
-                    setValidationErrors((prev) => ({ ...prev, password: null }));
-                  }
+                  if (validationErrors.password) setValidationErrors((prev) => ({ ...prev, password: null }));
                 }}
                 placeholder="••••••••"
                 className={`w-full pl-9 pr-10 py-2.5 text-xs bg-stone-900/90 border rounded-xl text-stone-100 placeholder-stone-500 focus:outline-none transition-all ${
@@ -192,20 +244,20 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-2 py-3 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 hover:from-amber-400 hover:to-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+            className="w-full mt-2 py-3 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 hover:from-amber-400 hover:to-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 uppercase tracking-wide"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-stone-950" />
-                <span>Signing in...</span>
+                <span>Verifying Access...</span>
               </>
             ) : (
-              <span>LOGIN</span>
+              <span>Sign In</span>
             )}
           </button>
         </form>
 
-        {/* Create New Account Link */}
+        {/* Links Footer */}
         <div className="mt-6 text-center text-xs text-stone-400 pt-4 border-t border-stone-800/80 space-y-2">
           <div>
             Don't have an account?{' '}
@@ -219,4 +271,4 @@ export function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default RoleLoginPage;
