@@ -23,13 +23,20 @@ export function RoleProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('hc_token') || null);
 
   const setRoleById = (roleId) => {
+    // Lock role to user's real authenticated role if logged in
+    if (user && user.role) {
+      const userRoleObj = Object.values(ROLES).find(r => r.id === user.role);
+      if (userRoleObj) setCurrentRole(userRoleObj);
+      return;
+    }
     const found = Object.values(ROLES).find(r => r.id === roleId);
     if (found) setCurrentRole(found);
   };
 
   useEffect(() => {
     if (user && user.role) {
-      setRoleById(user.role);
+      const userRoleObj = Object.values(ROLES).find(r => r.id === user.role);
+      if (userRoleObj) setCurrentRole(userRoleObj);
     }
   }, [user]);
 
@@ -39,7 +46,8 @@ export function RoleProvider({ children }) {
     if (authToken) localStorage.setItem('hc_token', authToken);
     if (userData) {
       localStorage.setItem('hc_user', JSON.stringify(userData));
-      if (userData.role) setRoleById(userData.role);
+      const userRoleObj = Object.values(ROLES).find(r => r.id === userData.role);
+      if (userRoleObj) setCurrentRole(userRoleObj);
     }
   };
 

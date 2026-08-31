@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
 import { 
   Hexagon, Search, LayoutDashboard, MapPin, Cpu, Package, 
-  Beaker, Factory, Truck, Database, Bell, Menu, X, UserCheck, LogIn, UserPlus, LogOut, User
+  Beaker, Factory, Truck, Database, Bell, Menu, X, UserCheck, LogIn, UserPlus, LogOut, User, Shield
 } from 'lucide-react';
 
 export function Navbar() {
@@ -13,18 +13,25 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Farms', path: '/farms', icon: MapPin },
-    { label: 'Hives', path: '/hives', icon: Cpu },
-    { label: 'Batches', path: '/batches', icon: Package },
-    { label: 'Quality', path: '/quality', icon: Beaker },
-    { label: 'Processing', path: '/processing', icon: Factory },
-    { label: 'Packaging', path: '/packaging', icon: Package },
-    { label: 'Logistics', path: '/transportation', icon: Truck },
-    { label: 'Blockchain', path: '/blockchain', icon: Database },
-    { label: 'Alerts', path: '/alerts', icon: Bell },
+  const activeRole = (user?.role || currentRole?.id || 'admin').toLowerCase();
+
+  const allNavItems = [
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'beekeeper', 'inspector', 'transporter', 'customer'] },
+    { label: 'Farms', path: '/farms', icon: MapPin, roles: ['admin', 'beekeeper'] },
+    { label: 'Hives', path: '/hives', icon: Cpu, roles: ['admin', 'beekeeper'] },
+    { label: 'Batches', path: '/batches', icon: Package, roles: ['admin', 'beekeeper', 'inspector', 'transporter'] },
+    { label: 'Quality', path: '/quality', icon: Beaker, roles: ['admin', 'inspector'] },
+    { label: 'Processing', path: '/processing', icon: Factory, roles: ['admin'] },
+    { label: 'Packaging', path: '/packaging', icon: Package, roles: ['admin'] },
+    { label: 'Logistics', path: '/transportation', icon: Truck, roles: ['admin', 'transporter'] },
+    { label: 'Blockchain', path: '/blockchain', icon: Database, roles: ['admin'] },
+    { label: 'Alerts', path: '/alerts', icon: Bell, roles: ['admin', 'beekeeper'] },
   ];
+
+  const visibleNavItems = allNavItems.filter(item => {
+    if (activeRole === 'admin') return true;
+    return item.roles.includes(activeRole);
+  });
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -37,7 +44,7 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/signin');
   };
 
   return (
@@ -62,7 +69,7 @@ export function Navbar() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 overflow-x-auto py-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
@@ -96,29 +103,17 @@ export function Navbar() {
               <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-2.5 pointer-events-none" />
             </form>
 
-            {/* Role Context Switcher & Authentication Links */}
+            {/* Role Context Switcher / Read-only Display */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-stone-900 border border-stone-800">
-                <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-                <select
-                  value={currentRole.id}
-                  onChange={(e) => setRoleById(e.target.value)}
-                  className="bg-transparent text-xs font-medium text-amber-300 focus:outline-none cursor-pointer"
-                  title="Demo Role Switcher (UI State Only)"
-                >
-                  {Object.values(ROLES).map((role) => (
-                    <option key={role.id} value={role.id} className="bg-stone-900 text-stone-200">
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {isAuthenticated ? (
+                /* Post-Authentication: Read-Only Role Badge */
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
-                    <User className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="font-semibold">{user?.name || user?.email}</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-stone-900 border border-stone-800 text-xs">
+                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-semibold text-stone-200">{user?.name || user?.email}</span>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 ml-1">
+                      {currentRole?.label || activeRole}
+                    </span>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -130,7 +125,24 @@ export function Navbar() {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5">
+                /* Pre-Authentication: Auth Links & Unauthenticated Demo Dropdown */
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-stone-900 border border-stone-800">
+                    <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                    <select
+                      value={currentRole.id}
+                      onChange={(e) => setRoleById(e.target.value)}
+                      className="bg-transparent text-xs font-medium text-amber-300 focus:outline-none cursor-pointer"
+                      title="Demo Role Switcher (Unauthenticated View Only)"
+                    >
+                      {Object.values(ROLES).map((role) => (
+                        <option key={role.id} value={role.id} className="bg-stone-900 text-stone-200">
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <Link
                     to="/signin"
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -186,7 +198,7 @@ export function Navbar() {
           </form>
 
           <div className="grid grid-cols-2 gap-2">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
@@ -208,26 +220,11 @@ export function Navbar() {
           </div>
 
           <div className="pt-3 border-t border-stone-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-stone-400">Demo Role:</span>
-              <select
-                value={currentRole.id}
-                onChange={(e) => setRoleById(e.target.value)}
-                className="bg-stone-900 border border-stone-800 text-xs font-medium text-amber-300 p-1.5 rounded-lg"
-              >
-                {Object.values(ROLES).map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {isAuthenticated ? (
               <div className="flex items-center justify-between pt-2">
                 <span className="text-xs font-semibold text-amber-300 flex items-center gap-1">
                   <User className="w-3.5 h-3.5" />
-                  {user?.name || user?.email}
+                  {user?.name || user?.email} ({currentRole?.label || activeRole})
                 </span>
                 <button
                   onClick={() => {
@@ -243,12 +240,12 @@ export function Navbar() {
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Link
-                  to="/login"
+                  to="/signin"
                   onClick={() => setMobileMenuOpen(false)}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 transition-colors"
                 >
                   <LogIn className="w-3.5 h-3.5" />
-                  <span>Login</span>
+                  <span>Sign In</span>
                 </Link>
                 <Link
                   to="/register"

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const qualityTestsRepository = require('../repositories/qualityTestsRepository');
 const honeyBatchesRepository = require('../repositories/honeyBatchesRepository');
 const { assessQuality } = require('../services/qualityAssessmentService');
+const { authorizeRole } = require('../middleware/authMiddleware');
 const {
   validateTestCreationTransition,
   validateApproveTransition,
@@ -32,8 +33,8 @@ function extractInspectorName(req) {
   return req.body && req.body.inspector_name ? req.body.inspector_name : undefined;
 }
 
-// POST /api/quality-tests - Create a new quality test
-router.post('/', (req, res) => {
+// POST /api/quality-tests - Create a new quality test (Protected: inspector, admin)
+router.post('/', authorizeRole(['inspector', 'admin']), (req, res) => {
   try {
     const authenticatedInspector = extractInspectorName(req);
     if (authenticatedInspector) {
@@ -85,7 +86,7 @@ router.post('/', (req, res) => {
   }
 });
 
-// GET /api/quality-tests - List quality tests with optional filters
+// GET /api/quality-tests - List quality tests with optional filters (Public read for inspection views)
 router.get('/', (req, res) => {
   try {
     const { status, batch_id } = req.query;
@@ -165,8 +166,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PUT /api/quality-tests/:id - Partial update of a quality test
-router.put('/:id', (req, res) => {
+// PUT /api/quality-tests/:id - Partial update of a quality test (Protected: inspector, admin)
+router.put('/:id', authorizeRole(['inspector', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -208,8 +209,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/quality-tests/:id - Delete a quality test
-router.delete('/:id', (req, res) => {
+// DELETE /api/quality-tests/:id - Delete a quality test (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -247,8 +248,8 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// PATCH /api/quality-tests/:id/approve - Approve a pending quality test
-router.patch('/:id/approve', (req, res) => {
+// PATCH /api/quality-tests/:id/approve - Approve a pending quality test (Protected: inspector, admin)
+router.patch('/:id/approve', authorizeRole(['inspector', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -296,8 +297,8 @@ router.patch('/:id/approve', (req, res) => {
   }
 });
 
-// PATCH /api/quality-tests/:id/reject - Reject a pending quality test
-router.patch('/:id/reject', (req, res) => {
+// PATCH /api/quality-tests/:id/reject - Reject a pending quality test (Protected: inspector, admin)
+router.patch('/:id/reject', authorizeRole(['inspector', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {

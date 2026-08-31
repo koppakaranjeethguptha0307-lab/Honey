@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const transportationRepository = require('../repositories/transportationRepository');
 const honeyBatchesRepository = require('../repositories/honeyBatchesRepository');
+const { authorizeRole } = require('../middleware/authMiddleware');
 const {
   validateTransportCreationTransition,
   validateTransportStatusTransition
@@ -11,8 +12,8 @@ const {
   validateUpdateTransportRecord
 } = require('../validators/transportationValidator');
 
-// POST /api/transportation-records - Create a new transportation record
-router.post('/', (req, res) => {
+// POST /api/transportation-records - Create a new transportation record (Protected: transporter, admin)
+router.post('/', authorizeRole(['transporter', 'admin']), (req, res) => {
   try {
     const validation = validateCreateTransportRecord(req.body, { honeyBatchesRepository });
     if (!validation.isValid) {
@@ -48,7 +49,7 @@ router.post('/', (req, res) => {
   }
 });
 
-// GET /api/transportation-records - List transportation records (support ?batch_id=&status=)
+// GET /api/transportation-records - List transportation records
 router.get('/', (req, res) => {
   try {
     const { batch_id, status } = req.query;
@@ -66,7 +67,6 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/transportation-records/stats - Transportation statistics
-// Registered BEFORE /:id to prevent route collision
 router.get('/stats', (req, res) => {
   try {
     const stats = transportationRepository.getTransportStats();
@@ -82,7 +82,7 @@ router.get('/stats', (req, res) => {
   }
 });
 
-// GET /api/transportation-records/:id - Get single transportation record
+// GET /api/transportation-records/:id - Detail view of a single record
 router.get('/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -95,9 +95,14 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ success: false, error: 'Transportation record not found' });
     }
 
+    const batch = honeyBatchesRepository.getBatchById(record.batch_id);
+
     return res.status(200).json({
       success: true,
-      data: record
+      data: {
+        ...record,
+        batch: batch || null
+      }
     });
   } catch (err) {
     return res.status(500).json({
@@ -107,8 +112,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PUT /api/transportation-records/:id - Partial update (blocked if DELIVERED)
-router.put('/:id', (req, res) => {
+// PUT /api/transportation-records/:id - Update transportation record (Protected: transporter, admin)
+router.put('/:id', authorizeRole(['transporter', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -122,7 +127,7 @@ router.put('/:id', (req, res) => {
 
     const validation = validateUpdateTransportRecord(req.body, { currentRecord });
     if (!validation.isValid) {
-      return res.status(validation.statusCode || 400).json({
+      return res.status(400).json({
         success: false,
         error: validation.errors.join('; ')
       });
@@ -141,8 +146,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/transportation-records/:id - Delete record (blocked with 409 if DELIVERED)
-router.delete('/:id', (req, res) => {
+// DELETE /api/transportation-records/:id - Delete a transportation record (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -174,8 +179,8 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// PATCH /api/transportation-records/:id/pickup - Mark picked up / in transit
-router.patch('/:id/pickup', (req, res) => {
+// PATCH /api/transportation-records/:id/pickup - Mark picked up / in transit (Protected: transporter, admin)
+router.patch('/:id/pickup', authorizeRole(['transporter', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -208,8 +213,8 @@ router.patch('/:id/pickup', (req, res) => {
   }
 });
 
-// PATCH /api/transportation-records/:id/deliver - Mark delivered
-router.patch('/:id/deliver', (req, res) => {
+// PATCH /api/transportation-records/:id/deliver - Mark delivered (Protected: transporter, admin)
+router.patch('/:id/deliver', authorizeRole(['transporter', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -242,8 +247,8 @@ router.patch('/:id/deliver', (req, res) => {
   }
 });
 
-// PATCH /api/transportation-records/:id/status - Generic status update
-router.patch('/:id/status', (req, res) => {
+// PATCH /api/transportation-records/:id/status - Generic status update (Protected: transporter, admin)
+router.patch('/:id/status', authorizeRole(['transporter', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {

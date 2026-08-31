@@ -2,21 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MapPin, Cpu, Package, Beaker, Factory, Truck, Bell, ShieldCheck, 
-  ArrowUpRight, AlertTriangle, RefreshCw
+  ArrowUpRight, AlertTriangle, RefreshCw, Search
 } from 'lucide-react';
 import { 
   getFarmStats, getHiveStats, getBatchStats, getQualityStats, 
   getProcessingStats, getPackagingStats, getTransportationStats, 
   getAlerts, getBatches 
 } from '../utils/api';
+import { useRole } from '../context/RoleContext';
 import { StatCard } from '../components/dashboard/StatCard';
 import { StatusProgressStepper } from '../components/dashboard/StatusProgressStepper';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorAlert } from '../components/common/ErrorAlert';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 export function DashboardPage() {
+  const { currentRole, user } = useRole();
+  const activeRole = (user?.role || currentRole?.id || 'admin').toLowerCase();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
@@ -86,10 +90,14 @@ export function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 glass-panel p-6 rounded-2xl border border-amber-500/20">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-100 font-['Outfit'] tracking-tight">
-            Honey Chain Command Center
+            {activeRole === 'beekeeper' && 'Beekeeper Command Center'}
+            {activeRole === 'inspector' && 'Quality Inspection Hub'}
+            {activeRole === 'transporter' && 'Logistics & Dispatch Center'}
+            {activeRole === 'customer' && 'Honey Chain Provenance Portal'}
+            {activeRole === 'admin' && 'Honey Chain Command Center'}
           </h1>
           <p className="text-xs sm:text-sm text-stone-400 mt-1">
-            Real-time supply chain overview & smart apiary monitoring metrics.
+            Real-time supply chain overview & role-tailored operations monitoring.
           </p>
         </div>
         <button
@@ -103,188 +111,234 @@ export function DashboardPage() {
 
       {error && <ErrorAlert message={error} onRetry={loadDashboardData} />}
 
-      {/* Top Metrics Grid */}
+      {/* Top Metrics Grid — Adapted by Role */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Apiary Farms" 
-          value={stats.farms?.total_farms} 
-          subtext={`${stats.farms?.total_hives || 0} Total Hives Registered`}
-          icon={MapPin}
-          color="amber"
-        />
-        <StatCard 
-          title="Active Hives" 
-          value={stats.hives?.active_hives} 
-          subtext={`${stats.hives?.total_sensor_readings || 0} Telemetry Readings`}
-          icon={Cpu}
-          color="sky"
-        />
-        <StatCard 
-          title="Harvested Batches" 
-          value={stats.batches?.total_batches} 
-          subtext={`${stats.batches?.total_quantity_kg || 0} kg Total Honey`}
-          icon={Package}
-          color="purple"
-        />
-        <StatCard 
-          title="Active Alerts" 
-          value={stats.activeAlerts.length} 
-          subtext="Requires Attention"
-          icon={Bell}
-          color={stats.activeAlerts.length > 0 ? 'rose' : 'emerald'}
-        />
+        {(activeRole === 'admin' || activeRole === 'beekeeper') && (
+          <>
+            <StatCard 
+              title="Apiary Farms" 
+              value={stats.farms?.total_farms} 
+              subtext={`${stats.farms?.total_hives || 0} Total Hives Registered`}
+              icon={MapPin}
+              color="amber"
+            />
+            <StatCard 
+              title="Active Hives" 
+              value={stats.hives?.active_hives} 
+              subtext={`${stats.hives?.total_sensor_readings || 0} Telemetry Readings`}
+              icon={Cpu}
+              color="sky"
+            />
+          </>
+        )}
+
+        {(activeRole === 'admin' || activeRole === 'beekeeper' || activeRole === 'inspector' || activeRole === 'transporter') && (
+          <StatCard 
+            title="Harvested Batches" 
+            value={stats.batches?.total_batches} 
+            subtext={`${stats.batches?.total_quantity_kg || 0} kg Total Honey`}
+            icon={Package}
+            color="purple"
+          />
+        )}
+
+        {(activeRole === 'admin' || activeRole === 'inspector') && (
+          <StatCard 
+            title="Quality Tests" 
+            value={stats.quality?.total_tests} 
+            subtext={`Avg Purity: ${stats.quality?.average_purity || 0}%`}
+            icon={Beaker}
+            color="blue"
+          />
+        )}
+
+        {(activeRole === 'admin' || activeRole === 'transporter') && (
+          <StatCard 
+            title="Transport Records" 
+            value={stats.transport?.total_transport_records || stats.transport?.total_records} 
+            subtext="Logistics & Dispatch Events"
+            icon={Truck}
+            color="emerald"
+          />
+        )}
+
+        {(activeRole === 'admin' || activeRole === 'beekeeper') && (
+          <StatCard 
+            title="Active Alerts" 
+            value={stats.activeAlerts.length} 
+            subtext="Requires Attention"
+            icon={Bell}
+            color={stats.activeAlerts.length > 0 ? 'rose' : 'emerald'}
+          />
+        )}
+
+        {activeRole === 'customer' && (
+          <>
+            <StatCard 
+              title="Total Honey Batches" 
+              value={stats.batches?.total_batches} 
+              subtext="Blockchain Verified Batches"
+              icon={Package}
+              color="amber"
+            />
+            <StatCard 
+              title="Lab Quality Average" 
+              value={`${stats.quality?.average_purity || 99}%`} 
+              subtext="Certified Pure Honey"
+              icon={ShieldCheck}
+              color="emerald"
+            />
+          </>
+        )}
       </div>
 
       {/* Pipeline Stage Breakdown Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-panel p-4 rounded-xl border border-stone-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400 font-['Outfit'] font-semibold">Quality Tests</p>
-            <p className="text-xl font-bold text-stone-100 font-['Outfit'] mt-0.5">
-              {stats.quality?.approved_tests || 0} <span className="text-xs text-stone-400 font-normal">/ {stats.quality?.total_tests || 0} Approved</span>
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <Beaker className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase font-mono">Quality Pending</p>
+              <p className="text-base font-bold text-stone-100 font-mono">
+                {stats.quality?.by_status?.find(s => s.status === 'PENDING')?.count || 0}
+              </p>
+            </div>
           </div>
-          <Beaker className="w-6 h-6 text-blue-400" />
         </div>
 
         <div className="glass-panel p-4 rounded-xl border border-stone-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400 font-['Outfit'] font-semibold">Processing</p>
-            <p className="text-xl font-bold text-stone-100 font-['Outfit'] mt-0.5">
-              {stats.processing?.completed_records || 0} <span className="text-xs text-stone-400 font-normal">/ {stats.processing?.total_records || 0} Complete</span>
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <Factory className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase font-mono">Processing Active</p>
+              <p className="text-base font-bold text-stone-100 font-mono">
+                {stats.processing?.total_processing_records || 0}
+              </p>
+            </div>
           </div>
-          <Factory className="w-6 h-6 text-sky-400" />
         </div>
 
         <div className="glass-panel p-4 rounded-xl border border-stone-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400 font-['Outfit'] font-semibold">Packaging</p>
-            <p className="text-xl font-bold text-stone-100 font-['Outfit'] mt-0.5">
-              {stats.packaging?.total_bottles_packaged || 0} <span className="text-xs text-stone-400 font-normal">Bottles</span>
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <Package className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase font-mono">Packaging Records</p>
+              <p className="text-base font-bold text-stone-100 font-mono">
+                {stats.packaging?.total_packaging_records || 0}
+              </p>
+            </div>
           </div>
-          <Package className="w-6 h-6 text-purple-400" />
         </div>
 
         <div className="glass-panel p-4 rounded-xl border border-stone-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-stone-400 font-['Outfit'] font-semibold">Transport Deliveries</p>
-            <p className="text-xl font-bold text-stone-100 font-['Outfit'] mt-0.5">
-              {stats.transport?.delivered_records || 0} <span className="text-xs text-stone-400 font-normal">/ {stats.transport?.total_records || 0} Delivered</span>
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <Truck className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] text-stone-400 uppercase font-mono">In-Transit / Delivered</p>
+              <p className="text-base font-bold text-stone-100 font-mono">
+                {stats.transport?.total_transport_records || 0}
+              </p>
+            </div>
           </div>
-          <Truck className="w-6 h-6 text-emerald-400" />
         </div>
       </div>
 
-      {/* Visual Charts & Alerts Section */}
+      {/* Main Grid: Recent Batches & Status Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Batch Status Breakdown Chart */}
-        <div className="glass-panel rounded-2xl p-6 border border-stone-800 lg:col-span-2">
-          <h3 className="text-lg font-bold text-stone-100 font-['Outfit'] mb-4 flex items-center justify-between">
-            <span>Honey Batch Lifecycle Breakdown</span>
-            <span className="text-xs text-stone-400 font-normal">Real Data</span>
-          </h3>
+        {/* Recent Honey Batches */}
+        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-stone-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-stone-100 font-['Outfit'] flex items-center gap-2">
+              <Package className="w-4 h-4 text-amber-500" />
+              <span>Recent Honey Batches</span>
+            </h2>
+            <Link to="/batches" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-medium">
+              <span>View All</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-          {batchStatusData.length > 0 ? (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={batchStatusData}>
-                  <XAxis dataKey="name" stroke="#a8a29e" fontSize={11} />
-                  <YAxis stroke="#a8a29e" fontSize={11} allowDecimals={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1c1917', borderColor: '#44403c', borderRadius: '0.5rem', color: '#f5f5f4' }} 
-                  />
-                  <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-stone-400 text-xs">
-              No honey batch status data available.
-            </div>
-          )}
+          <div className="space-y-3">
+            {stats.recentBatches.length === 0 ? (
+              <p className="text-xs text-stone-500 py-4 text-center">No recent batches available.</p>
+            ) : (
+              stats.recentBatches.map((batch) => (
+                <div key={batch.batch_id} className="p-3.5 bg-stone-900/80 rounded-xl border border-stone-800/80 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-amber-400">{batch.batch_id}</span>
+                      <StatusBadge status={batch.status} />
+                    </div>
+                    <p className="text-xs text-stone-400 mt-1">
+                      {batch.honey_type} • {batch.quantity} {batch.unit || 'kg'} • Grade: {batch.quality_grade || 'N/A'}
+                    </p>
+                  </div>
+                  <Link 
+                    to={`/verify/${batch.batch_id}`} 
+                    className="px-2.5 py-1 text-[11px] font-semibold text-stone-300 bg-stone-800 hover:bg-stone-700 rounded-lg transition-colors shrink-0"
+                  >
+                    Verify QR
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Unread Smart Alerts */}
-        <div className="glass-panel rounded-2xl p-6 border border-stone-800 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-stone-100 font-['Outfit'] flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span>Active Smart Alerts</span>
-              </h3>
-              <Link to="/alerts" className="text-xs text-amber-400 hover:underline flex items-center gap-1">
-                View All <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {stats.activeAlerts.length > 0 ? (
-              <div className="space-y-3">
-                {stats.activeAlerts.map((alert) => (
-                  <div key={alert.id} className="p-3 rounded-xl bg-stone-950/60 border border-stone-800/80 space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-rose-400 uppercase font-mono">{alert.severity || 'ALERT'}</span>
-                      <span className="text-[10px] text-stone-400">{new Date(alert.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <p className="text-xs font-medium text-stone-200">{alert.title}</p>
-                    <p className="text-[11px] text-stone-400 truncate">{alert.message}</p>
-                  </div>
-                ))}
-              </div>
+        {/* Status Pie Chart */}
+        <div className="glass-panel p-6 rounded-2xl border border-stone-800 flex flex-col justify-between space-y-4">
+          <h2 className="text-base font-bold text-stone-100 font-['Outfit']">Batch Status Distribution</h2>
+          
+          <div className="h-48 w-full flex items-center justify-center">
+            {batchStatusData.length === 0 ? (
+              <p className="text-xs text-stone-500">No status data</p>
             ) : (
-              <div className="p-8 text-center text-stone-400 text-xs border border-dashed border-stone-800 rounded-xl">
-                No active unread alerts. All hives operating in optimal status.
-              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={batchStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {batchStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1c1917', borderColor: '#44403c', borderRadius: '8px', fontSize: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             )}
           </div>
 
-          <Link
-            to="/alerts"
-            className="mt-4 w-full py-2.5 text-center text-xs font-semibold text-amber-400 bg-amber-950/40 hover:bg-amber-900/40 border border-amber-800/50 rounded-xl transition-all block"
-          >
-            Manage Alert Subscriptions
-          </Link>
-        </div>
-
-      </div>
-
-      {/* Latest Honey Batches Stepper Feed */}
-      <div className="glass-panel rounded-2xl p-6 border border-stone-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-stone-100 font-['Outfit']">Recent Honey Batches & Lifecycle Progress</h3>
-          <Link to="/batches" className="text-xs text-amber-400 hover:underline flex items-center gap-1">
-            View All Batches <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {stats.recentBatches.length > 0 ? (
-          <div className="space-y-4 divide-y divide-stone-800/60">
-            {stats.recentBatches.map((batch) => (
-              <div key={batch.batch_id} className="pt-4 first:pt-0 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <Link to={`/verify/${batch.batch_id}`} className="font-mono font-bold text-amber-400 hover:underline text-sm">
-                      {batch.batch_id}
-                    </Link>
-                    <span className="text-xs text-stone-300 font-medium">{batch.honey_type}</span>
-                    <span className="text-xs text-stone-400">({batch.quantity} {batch.unit})</span>
-                  </div>
-                  <StatusBadge status={batch.status} />
-                </div>
-                <StatusProgressStepper currentStatus={batch.status} />
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-800/80">
+            {batchStatusData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center gap-1.5 text-xs text-stone-400">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="truncate">{entry.name}: <strong className="text-stone-200">{entry.value}</strong></span>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="p-8 text-center text-stone-400 text-xs">
-            No honey batches created yet. Visit Farm or Batch Management to harvest a batch.
-          </div>
-        )}
+        </div>
+
       </div>
 
     </div>
   );
 }
+
+export default DashboardPage;

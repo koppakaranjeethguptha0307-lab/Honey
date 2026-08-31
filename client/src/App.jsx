@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { RoleProvider } from './context/RoleContext';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
-import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { RoleChooserPage } from './pages/RoleChooserPage';
 import { RoleLoginPage } from './pages/RoleLoginPage';
@@ -22,6 +22,7 @@ import { PackagingPage } from './pages/PackagingPage';
 import { TransportationPage } from './pages/TransportationPage';
 import { PublicVerifyPage } from './pages/PublicVerifyPage';
 import { BlockchainPage } from './pages/BlockchainPage';
+import { AccessDeniedPage } from './pages/AccessDeniedPage';
 
 export function App() {
   return (
@@ -48,19 +49,109 @@ export function App() {
               <Route path="/signin/customer" element={<RoleLoginPage roleKey="customer" />} />
               <Route path="/signin/:roleId" element={<RoleLoginPage />} />
 
-              {/* Existing Supply Chain Module Routes */}
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/farms" element={<FarmsPage />} />
-              <Route path="/hives" element={<HivesPage />} />
-              <Route path="/sensors" element={<SensorsPage />} />
-              <Route path="/alerts" element={<AlertsPage />} />
-              <Route path="/batches" element={<BatchesPage />} />
-              <Route path="/quality" element={<QualityPage />} />
-              <Route path="/processing" element={<ProcessingPage />} />
-              <Route path="/packaging" element={<PackagingPage />} />
-              <Route path="/transportation" element={<TransportationPage />} />
-              <Route path="/blockchain" element={<BlockchainPage />} />
-              
+              {/* Access Denied Route */}
+              <Route path="/access-denied" element={<AccessDeniedPage />} />
+
+              {/* Role-Protected Supply Chain Module Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'inspector', 'transporter', 'customer', 'admin']}>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/farms"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'admin']}>
+                    <FarmsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/hives"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'admin']}>
+                    <HivesPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/sensors"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'admin']}>
+                    <SensorsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/alerts"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'admin']}>
+                    <AlertsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/batches"
+                element={
+                  <ProtectedRoute allowedRoles={['beekeeper', 'inspector', 'transporter', 'admin']}>
+                    <BatchesPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/quality"
+                element={
+                  <ProtectedRoute allowedRoles={['inspector', 'admin']}>
+                    <QualityPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/processing"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <ProcessingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/packaging"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <PackagingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/transportation"
+                element={
+                  <ProtectedRoute allowedRoles={['transporter', 'admin']}>
+                    <TransportationPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/blockchain"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <BlockchainPage />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
