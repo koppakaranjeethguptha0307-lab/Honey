@@ -4,6 +4,7 @@ import {
   ShieldCheck, AlertCircle, Calendar, User, FileText
 } from 'lucide-react';
 import { getQualityTests, createQualityTest, approveQualityTest, rejectQualityTest, getBatches } from '../utils/api';
+import { useRole } from '../context/RoleContext';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorAlert } from '../components/common/ErrorAlert';
 import { EmptyState } from '../components/common/EmptyState';
@@ -11,6 +12,9 @@ import { Modal } from '../components/common/Modal';
 import { StatusBadge } from '../components/common/StatusBadge';
 
 export function QualityPage() {
+  const { user } = useRole();
+  const activeInspectorName = user?.name || 'Authorized Inspector';
+
   const [tests, setTests] = useState([]);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +36,7 @@ export function QualityPage() {
     taste: 'Sweet',
     adulteration_check: 'PASSED',
     quality_grade: 'GRADE_A',
-    inspector_name: 'Dr. Jane Smith',
+    inspector_name: activeInspectorName,
     remarks: 'Sample purity exceeds industry benchmark.'
   });
 
@@ -73,7 +77,7 @@ export function QualityPage() {
       taste: 'Sweet',
       adulteration_check: 'PASSED',
       quality_grade: 'GRADE_A',
-      inspector_name: 'Dr. Jane Smith',
+      inspector_name: activeInspectorName,
       remarks: 'Pristine lab sample'
     });
     setFormError(null);
@@ -87,6 +91,7 @@ export function QualityPage() {
 
     const res = await createQualityTest({
       ...formData,
+      inspector_name: activeInspectorName,
       purity_pct: Number(formData.purity_pct),
       moisture_pct: Number(formData.moisture_pct)
     });
@@ -106,7 +111,10 @@ export function QualityPage() {
     setSubmitting(true);
     setFormError(null);
 
-    const res = await approveQualityTest(approveModalTest.id, approveData);
+    const res = await approveQualityTest(approveModalTest.id, {
+      ...approveData,
+      inspector_name: activeInspectorName,
+    });
     if (res.success) {
       setApproveModalTest(null);
       loadData();
@@ -126,7 +134,10 @@ export function QualityPage() {
     setSubmitting(true);
     setFormError(null);
 
-    const res = await rejectQualityTest(rejectModalTest.id, rejectData);
+    const res = await rejectQualityTest(rejectModalTest.id, {
+      ...rejectData,
+      inspector_name: activeInspectorName,
+    });
     if (res.success) {
       setRejectModalTest(null);
       loadData();
@@ -149,6 +160,10 @@ export function QualityPage() {
           <p className="text-xs sm:text-sm text-stone-400 mt-1">
             Certified purity testing, moisture analysis, adulteration screening, and inspector approval workflow.
           </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium mt-3">
+            <User className="w-3.5 h-3.5 text-amber-400" />
+            <span>Active Inspector: <strong className="text-stone-100 font-semibold">{activeInspectorName}</strong></span>
+          </div>
         </div>
 
         <button
@@ -194,7 +209,6 @@ export function QualityPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tests.map((test) => {
             const isPending = String(test.status).toUpperCase() === 'PENDING';
-            const isApproved = String(test.status).toUpperCase() === 'APPROVED';
 
             return (
               <div key={test.id} className="glass-panel glass-panel-hover rounded-2xl p-5 border border-stone-800 flex flex-col justify-between space-y-4">
@@ -230,7 +244,7 @@ export function QualityPage() {
                   </div>
 
                   <div className="space-y-1 text-xs text-stone-400">
-                    <p><span className="text-stone-500">Inspector:</span> {test.inspector_name || 'Lab Staff'}</p>
+                    <p><span className="text-stone-500">Inspector:</span> {test.inspector_name || 'Authorized Inspector'}</p>
                     <p><span className="text-stone-500">Test Date:</span> {test.test_date || 'N/A'}</p>
                     {test.remarks && <p className="italic text-stone-300 bg-stone-950/40 p-2 rounded border border-stone-800 mt-2">"{test.remarks}"</p>}
                   </div>
@@ -349,14 +363,15 @@ export function QualityPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-1">Inspector Name *</label>
+            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-1">Inspector Identity *</label>
             <input
               type="text"
               required
-              value={formData.inspector_name}
-              onChange={(e) => setFormData({ ...formData, inspector_name: e.target.value })}
-              className="w-full px-3 py-2 text-xs bg-stone-900 border border-stone-800 rounded-lg text-stone-100 focus:border-amber-500"
+              readOnly
+              value={activeInspectorName}
+              className="w-full px-3 py-2 text-xs bg-stone-950 border border-stone-800 rounded-lg text-amber-300 font-semibold cursor-not-allowed opacity-90"
             />
+            <p className="text-[10px] text-stone-500 mt-1">Auto-populated from authenticated account: {activeInspectorName}</p>
           </div>
 
           <div>
@@ -482,3 +497,5 @@ export function QualityPage() {
     </div>
   );
 }
+
+export default QualityPage;

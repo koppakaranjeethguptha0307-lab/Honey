@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const qualityTestsRepository = require('../repositories/qualityTestsRepository');
 const honeyBatchesRepository = require('../repositories/honeyBatchesRepository');
 const { assessQuality } = require('../services/qualityAssessmentService');
@@ -14,9 +15,31 @@ const {
   validateRejectAction
 } = require('../validators/qualityTestsValidator');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'honeychain-secret-key-2026';
+
+function extractInspectorName(req) {
+  if (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.name) {
+        return decoded.name;
+      }
+    } catch (e) {
+      // Fallback if token expired or invalid
+    }
+  }
+  return req.body && req.body.inspector_name ? req.body.inspector_name : undefined;
+}
+
 // POST /api/quality-tests - Create a new quality test
 router.post('/', (req, res) => {
   try {
+    const authenticatedInspector = extractInspectorName(req);
+    if (authenticatedInspector) {
+      req.body.inspector_name = authenticatedInspector;
+    }
+
     const validation = validateCreateQualityTest(req.body, { honeyBatchesRepository });
     if (!validation.isValid) {
       return res.status(400).json({
@@ -83,7 +106,6 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/quality-tests/stats - Quality testing statistics
-// IMPORTANT: Registered before GET /:id so "stats" is not parsed as test ID
 router.get('/stats', (req, res) => {
   try {
     const stats = qualityTestsRepository.getQualityStats();
@@ -186,7 +208,7 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/quality-tests/:id - Delete a quality test (blocked if already APPROVED/REJECTED)
+// DELETE /api/quality-tests/:id - Delete a quality test
 router.delete('/:id', (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -254,7 +276,7 @@ router.patch('/:id/approve', (req, res) => {
     }
 
     const remarks = req.body && req.body.remarks ? req.body.remarks : undefined;
-    const inspectorName = req.body && req.body.inspector_name ? req.body.inspector_name : undefined;
+    const inspectorName = extractInspectorName(req) || (req.body && req.body.inspector_name ? req.body.inspector_name : undefined);
     const farmLocation = batch && batch.farm ? (batch.farm.location || `${batch.farm.name}, ${batch.farm.district || ''}`) : 'Processing Facility';
 
     const approvedTest = qualityTestsRepository.approveQualityTestTx(id, batch, remarks, inspectorName, farmLocation);
@@ -274,7 +296,7 @@ router.patch('/:id/approve', (req, res) => {
   }
 });
 
-// PATCH /api/quality-tests/:id/reject - Reject a pending quality test (requires reason/remarks)
+// PATCH /api/quality-tests/:id/reject - Reject a pending quality test
 router.patch('/:id/reject', (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -311,7 +333,7 @@ router.patch('/:id/reject', (req, res) => {
     }
 
     const reason = req.body.remarks || req.body.reason || req.body.rejection_reason;
-    const inspectorName = req.body && req.body.inspector_name ? req.body.inspector_name : undefined;
+    const inspectorName = extractInspectorName(req) || (req.body && req.body.inspector_name ? req.body.inspector_name : undefined);
     const farmLocation = batch && batch.farm ? (batch.farm.location || `${batch.farm.name}, ${batch.farm.district || ''}`) : 'Processing Facility';
 
     const rejectedTest = qualityTestsRepository.rejectQualityTestTx(id, batch, reason, inspectorName, farmLocation);
