@@ -2,6 +2,25 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        var origOnError = window.onerror;
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+          var str = String(msg || '');
+          if (str.indexOf('startTime') !== -1 || str.indexOf('reportAllChanges') !== -1 || !url || url.indexOf('chrome-extension') !== -1) {
+            return true;
+          }
+          if (origOnError) return origOnError.apply(this, arguments);
+        };
+        window.addEventListener('error', function(e) {
+          var m = String(e.message || '');
+          if (m.indexOf('startTime') !== -1 || m.indexOf('reportAllChanges') !== -1) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Honey Chain — Blockchain Traceability & Smart Beekeeping</title>
