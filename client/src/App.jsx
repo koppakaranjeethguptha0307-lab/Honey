@@ -6,6 +6,7 @@ import { Footer } from './components/common/Footer';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FarmsPage } from './pages/FarmsPage';
 import { HivesPage } from './pages/HivesPage';
@@ -28,6 +29,7 @@ export function App() {
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/farms" element={<FarmsPage />} />
               <Route path="/hives" element={<HivesPage />} />

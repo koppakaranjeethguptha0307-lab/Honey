@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRole } from '../../context/RoleContext';
 import { 
   Hexagon, Search, Shield, LayoutDashboard, MapPin, Cpu, Package, 
-  Beaker, Factory, Truck, Database, Bell, Menu, X, UserCheck
+  Beaker, Factory, Truck, Database, Bell, Menu, X, UserCheck, LogIn
 } from 'lucide-react';
 
 export function Navbar() {
@@ -91,21 +91,35 @@ export function Navbar() {
               <Search className="w-3.5 h-3.5 text-stone-500 absolute left-2.5 top-2.5 pointer-events-none" />
             </form>
 
-            {/* Demo Role Context Switcher */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900 border border-stone-800">
-              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-              <select
-                value={currentRole.id}
-                onChange={(e) => setRoleById(e.target.value)}
-                className="bg-transparent text-xs font-medium text-amber-300 focus:outline-none cursor-pointer"
-                title="Demo Role Switcher (UI State Only)"
+            {/* Demo Role Context Switcher & Login Link */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-900 border border-stone-800">
+                <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+                <select
+                  value={currentRole.id}
+                  onChange={(e) => setRoleById(e.target.value)}
+                  className="bg-transparent text-xs font-medium text-amber-300 focus:outline-none cursor-pointer"
+                  title="Demo Role Switcher (UI State Only)"
+                >
+                  {Object.values(ROLES).map((role) => (
+                    <option key={role.id} value={role.id} className="bg-stone-900 text-stone-200">
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Link
+                to="/login"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  location.pathname.startsWith('/login')
+                    ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20'
+                    : 'bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25'
+                }`}
               >
-                {Object.values(ROLES).map((role) => (
-                  <option key={role.id} value={role.id} className="bg-stone-900 text-stone-200">
-                    {role.label}
-                  </option>
-                ))}
-              </select>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Login</span>
+              </Link>
             </div>
           </div>
 
@@ -157,19 +171,30 @@ export function Navbar() {
             })}
           </div>
 
-          <div className="pt-2 border-t border-stone-800 flex items-center justify-between">
-            <span className="text-xs text-stone-400">Demo Role:</span>
-            <select
-              value={currentRole.id}
-              onChange={(e) => setRoleById(e.target.value)}
-              className="bg-stone-900 border border-stone-800 text-xs font-medium text-amber-300 p-1.5 rounded-lg"
+          <div className="pt-2 border-t border-stone-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-stone-400">Demo Role:</span>
+              <select
+                value={currentRole.id}
+                onChange={(e) => setRoleById(e.target.value)}
+                className="bg-stone-900 border border-stone-800 text-xs font-medium text-amber-300 p-1.5 rounded-lg"
+              >
+                {Object.values(ROLES).map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Link
+              to="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 transition-colors"
             >
-              {Object.values(ROLES).map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Login Page</span>
+            </Link>
           </div>
         </div>
       )}
