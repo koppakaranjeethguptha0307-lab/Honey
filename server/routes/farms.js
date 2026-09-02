@@ -5,10 +5,11 @@ const hivesRepository = require('../repositories/hivesRepository');
 const sensorReadingsRepository = require('../repositories/sensorReadingsRepository');
 const alertsRepository = require('../repositories/alertsRepository');
 const { validateCreateFarm, validateUpdateFarm } = require('../validators/farmsValidator');
+const { authorizeRole } = require('../middleware/authMiddleware');
 const { calculateHealthScore } = require('../services/automationEngine');
 
-// POST /api/farms - Create a new farm
-router.post('/', (req, res) => {
+// POST /api/farms - Create a new farm (Protected: beekeeper, admin)
+router.post('/', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const validation = validateCreateFarm(req.body);
     if (!validation.isValid) {
@@ -195,8 +196,8 @@ router.get('/:farmId/dashboard', (req, res) => {
   }
 });
 
-// PUT /api/farms/:id - Update an existing farm
-router.put('/:id', (req, res) => {
+// PUT /api/farms/:id - Update an existing farm (Protected: beekeeper, admin)
+router.put('/:id', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -235,8 +236,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/farms/:id - Delete a farm (rejected with 409 if hives still reference it)
-router.delete('/:id', (req, res) => {
+// DELETE /api/farms/:id - Delete a farm (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {

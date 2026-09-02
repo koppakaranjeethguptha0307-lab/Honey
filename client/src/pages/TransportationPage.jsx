@@ -6,6 +6,7 @@ import {
   getTransportationRecords, createTransportationRecord, pickupTransportation, 
   inTransitTransportation, deliverTransportation, getBatches 
 } from '../utils/api';
+import { useRole } from '../context/RoleContext';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorAlert } from '../components/common/ErrorAlert';
 import { EmptyState } from '../components/common/EmptyState';
@@ -13,6 +14,9 @@ import { Modal } from '../components/common/Modal';
 import { StatusBadge } from '../components/common/StatusBadge';
 
 export function TransportationPage() {
+  const { user } = useRole();
+  const activeUserName = user?.name || 'Authorized Transporter';
+
   const [records, setRecords] = useState([]);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +29,7 @@ export function TransportationPage() {
 
   const [formData, setFormData] = useState({
     batch_id: '',
-    transporter_name: 'SwiftLogistics Express',
+    transporter_name: activeUserName,
     pickup_date: new Date().toISOString().split('T')[0],
     pickup_loc: 'EcoPack Plant 4',
     destination_loc: 'Metro Distribution Hub',
@@ -65,7 +69,7 @@ export function TransportationPage() {
 
     setFormData({
       batch_id: firstBatchId,
-      transporter_name: 'SwiftLogistics Express',
+      transporter_name: activeUserName,
       pickup_date: new Date().toISOString().split('T')[0],
       pickup_loc: 'EcoPack Plant 4',
       destination_loc: 'Metro Distribution Hub',

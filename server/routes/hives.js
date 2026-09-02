@@ -7,10 +7,11 @@ const alertsRepository = require('../repositories/alertsRepository');
 const { validateCreateHive, validateUpdateHive } = require('../validators/hivesValidator');
 const { validateSensorReading } = require('../validators/sensorReadingsValidator');
 const { generateSimulatedReading } = require('../services/iotSimulator');
+const { authorizeRole } = require('../middleware/authMiddleware');
 const { calculateHealthScore, evaluateAutomationRules } = require('../services/automationEngine');
 
-// POST /api/hives - Create a new hive under a given farm_id
-router.post('/', (req, res) => {
+// POST /api/hives - Create a new hive under a given farm_id (Protected: beekeeper, admin)
+router.post('/', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const validation = validateCreateHive(req.body);
     if (!validation.isValid) {
@@ -111,8 +112,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PUT /api/hives/:id - Update an existing hive
-router.put('/:id', (req, res) => {
+// PUT /api/hives/:id - Update an existing hive (Protected: beekeeper, admin)
+router.put('/:id', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -165,8 +166,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/hives/:id - Delete a hive and decrement parent farm's hives_count
-router.delete('/:id', (req, res) => {
+// DELETE /api/hives/:id - Delete a hive and decrement parent farm's hives_count (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {

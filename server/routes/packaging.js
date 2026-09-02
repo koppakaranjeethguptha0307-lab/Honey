@@ -10,9 +10,10 @@ const {
   validateCreatePackagingRecord,
   validateUpdatePackagingRecord
 } = require('../validators/packagingValidator');
+const { authorizeRole } = require('../middleware/authMiddleware');
 
-// POST /api/packaging-records - Create a new packaging record
-router.post('/', (req, res) => {
+// POST /api/packaging-records - Create a new packaging record (Protected: admin)
+router.post('/', authorizeRole(['admin']), (req, res) => {
   try {
     const validation = validateCreatePackagingRecord(req.body, { honeyBatchesRepository });
     if (!validation.isValid) {
@@ -108,8 +109,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PUT /api/packaging-records/:id - Partial update (blocked if COMPLETED)
-router.put('/:id', (req, res) => {
+// PUT /api/packaging-records/:id - Partial update (Protected: admin)
+router.put('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -142,8 +143,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/packaging-records/:id - Delete record (blocked with 409 if COMPLETED)
-router.delete('/:id', (req, res) => {
+// DELETE /api/packaging-records/:id - Delete record (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -175,8 +176,8 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// PATCH /api/packaging-records/:id/start - Move status to IN_PROGRESS
-router.patch('/:id/start', (req, res) => {
+// PATCH /api/packaging-records/:id/start - Move status to IN_PROGRESS (Protected: admin)
+router.patch('/:id/start', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -212,8 +213,8 @@ router.patch('/:id/start', (req, res) => {
   }
 });
 
-// PATCH /api/packaging-records/:id/complete - Move status to COMPLETED
-router.patch('/:id/complete', (req, res) => {
+// PATCH /api/packaging-records/:id/complete - Move status to COMPLETED (Protected: admin)
+router.patch('/:id/complete', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -249,8 +250,8 @@ router.patch('/:id/complete', (req, res) => {
   }
 });
 
-// PATCH /api/packaging-records/:id/status - Generic status update
-router.patch('/:id/status', (req, res) => {
+// PATCH /api/packaging-records/:id/status - Generic status update (Protected: admin)
+router.patch('/:id/status', authorizeRole(['admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {

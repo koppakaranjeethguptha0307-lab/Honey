@@ -6,6 +6,7 @@ import {
   getProcessingRecords, createProcessingRecord, startProcessingRecord, 
   completeProcessingRecord, getBatches 
 } from '../utils/api';
+import { useRole } from '../context/RoleContext';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorAlert } from '../components/common/ErrorAlert';
 import { EmptyState } from '../components/common/EmptyState';
@@ -13,6 +14,9 @@ import { Modal } from '../components/common/Modal';
 import { StatusBadge } from '../components/common/StatusBadge';
 
 export function ProcessingPage() {
+  const { user } = useRole();
+  const activeUserName = user?.name || 'Master Processor';
+
   const [records, setRecords] = useState([]);
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +32,7 @@ export function ProcessingPage() {
     facility: 'Central Honey Processors Inc',
     processing_date: new Date().toISOString().split('T')[0],
     method: 'Cold Extraction & Micro-filtration',
-    processor: 'Master Processor Bob',
+    processor: activeUserName,
     notes: 'Standard filtration parameters set.'
   });
 
@@ -64,7 +68,7 @@ export function ProcessingPage() {
       facility: 'Central Honey Processors Inc',
       processing_date: new Date().toISOString().split('T')[0],
       method: 'Cold Extraction & Micro-filtration',
-      processor: 'Master Processor Bob',
+      processor: activeUserName,
       notes: 'Standard cold filtration'
     });
     setFormError(null);

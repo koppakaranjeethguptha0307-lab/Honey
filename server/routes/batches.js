@@ -12,9 +12,10 @@ const { generateQRCodeDataURL } = require('../services/qrCodeService');
 const { verifyBatchChain } = require('../services/blockchainVerifier');
 const { calculateHealthScore } = require('../services/automationEngine');
 const { validateCreateBatch, validateUpdateBatch } = require('../validators/honeyBatchesValidator');
+const { authorizeRole } = require('../middleware/authMiddleware');
 
-// POST /api/honey-batches - Create a new honey batch with automatic traceability event
-router.post('/', (req, res) => {
+// POST /api/honey-batches - Create a new honey batch with automatic traceability event (Protected: beekeeper, admin)
+router.post('/', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const validation = validateCreateBatch(req.body, { farmsRepository, hivesRepository });
     if (!validation.isValid) {
@@ -55,9 +56,10 @@ router.post('/', (req, res) => {
       data: createdBatch
     });
   } catch (err) {
+    console.error('Batch creation error:', err);
     return res.status(500).json({
       success: false,
-      error: 'An unexpected error occurred while creating honey batch'
+      error: err.message || 'An unexpected error occurred while creating honey batch'
     });
   }
 });
@@ -314,8 +316,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PUT /api/honey-batches/:id - Update an existing batch
-router.put('/:id', (req, res) => {
+// PUT /api/honey-batches/:id - Update an existing batch (Protected: beekeeper, admin)
+router.put('/:id', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const batchId = req.params.id;
     const currentBatch = honeyBatchesRepository.getBatchById(batchId);
@@ -349,8 +351,8 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// DELETE /api/honey-batches/:id - Delete a batch (blocked with 409 if traceability events exist)
-router.delete('/:id', (req, res) => {
+// DELETE /api/honey-batches/:id - Delete a batch (Protected: admin)
+router.delete('/:id', authorizeRole(['admin']), (req, res) => {
   try {
     const batchId = req.params.id;
     const currentBatch = honeyBatchesRepository.getBatchById(batchId);

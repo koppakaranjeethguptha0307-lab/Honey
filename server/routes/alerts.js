@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const alertsRepository = require('../repositories/alertsRepository');
+const { authorizeRole } = require('../middleware/authMiddleware');
 
 // GET /api/alerts - List all alerts (optional ?severity=&hive_id=&is_read=)
 router.get('/', (req, res) => {
@@ -19,8 +20,8 @@ router.get('/', (req, res) => {
   }
 });
 
-// PATCH /api/alerts/:id/read - Mark alert as read (is_read = 1)
-router.patch('/:id/read', (req, res) => {
+// PATCH /api/alerts/:id/read - Mark alert as read (Protected: beekeeper, admin)
+router.patch('/:id/read', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -50,8 +51,8 @@ router.patch('/:id/read', (req, res) => {
   }
 });
 
-// PATCH /api/alerts/:id/unread - Mark alert as unread (is_read = 0)
-router.patch('/:id/unread', (req, res) => {
+// PATCH /api/alerts/:id/unread - Mark alert as unread (Protected: beekeeper, admin)
+router.patch('/:id/unread', authorizeRole(['beekeeper', 'admin']), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
