@@ -40,6 +40,16 @@ export function RoleProvider({ children }) {
     }
   }, [user]);
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener('hc_unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('hc_unauthorized', handleUnauthorized);
+    };
+  }, []);
+
   const loginAuth = (userData, authToken) => {
     setUser(userData);
     setToken(authToken);

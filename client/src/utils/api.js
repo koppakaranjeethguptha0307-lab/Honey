@@ -7,12 +7,20 @@ const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').repla
 
 async function apiFetch(path, options = {}) {
   const url = `${BASE_URL}${path}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Automatically attach JWT token from localStorage if available
+  const token = typeof window !== 'undefined' ? localStorage.getItem('hc_token') : null;
+  if (token && !headers['Authorization'] && !headers['authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   };
 
   if (config.body && typeof config.body === 'object') {
@@ -27,6 +35,14 @@ async function apiFetch(path, options = {}) {
       json = JSON.parse(text);
     } catch (e) {
       json = { success: false, error: text || 'Invalid server response' };
+    }
+
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('hc_token');
+        localStorage.removeItem('hc_user');
+        window.dispatchEvent(new CustomEvent('hc_unauthorized'));
+      }
     }
 
     if (!response.ok) {

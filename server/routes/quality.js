@@ -19,6 +19,9 @@ const {
 const JWT_SECRET = process.env.JWT_SECRET || 'honeychain-secret-key-2026';
 
 function extractInspectorName(req) {
+  if (req.user && req.user.name) {
+    return req.user.name;
+  }
   if (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     try {
       const token = req.headers.authorization.split(' ')[1];
