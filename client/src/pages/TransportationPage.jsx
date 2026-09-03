@@ -79,7 +79,7 @@ export function TransportationPage() {
   }, [statusFilter]);
 
   const eligibleBatches = batches.filter(b => 
-    String(b.status).toUpperCase() === 'PACKAGED' || 
+    String(b.status).toUpperCase() === 'PACKAGED' && 
     String(b.packaging_status).toUpperCase() === 'COMPLETED'
   );
 
