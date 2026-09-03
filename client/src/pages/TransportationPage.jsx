@@ -78,9 +78,13 @@ export function TransportationPage() {
     loadData();
   }, [statusFilter]);
 
+  const eligibleBatches = batches.filter(b => 
+    String(b.status).toUpperCase() === 'PACKAGED' || 
+    String(b.packaging_status).toUpperCase() === 'COMPLETED'
+  );
+
   const handleOpenCreate = () => {
-    const packagedBatches = batches.filter(b => b.status === 'PACKAGED' || b.packaging_status === 'COMPLETED');
-    const firstBatchId = packagedBatches.length > 0 ? packagedBatches[0].batch_id : (batches.length > 0 ? batches[0].batch_id : '');
+    const firstBatchId = eligibleBatches.length > 0 ? eligibleBatches[0].batch_id : '';
 
     setFormData({
       batch_id: firstBatchId,
@@ -514,11 +518,16 @@ export function TransportationPage() {
               onChange={(e) => setFormData({ ...formData, batch_id: e.target.value })}
               className="w-full px-3 py-2 text-xs bg-stone-900 border border-stone-800 rounded-lg text-stone-100 font-mono focus:border-amber-500"
             >
-              <option value="">Select Batch...</option>
-              {batches.map((b) => (
+              <option value="">Select Packaged Batch...</option>
+              {eligibleBatches.map((b) => (
                 <option key={b.batch_id} value={b.batch_id}>{b.batch_id} ({b.honey_type} - {b.status})</option>
               ))}
             </select>
+            {eligibleBatches.length === 0 && (
+              <p className="text-[11px] text-amber-400 mt-1 font-mono">
+                ⚠️ No batches are currently in PACKAGED status. Honey batches must complete Quality Approval, Processing, and Bottling & Packaging before becoming eligible for logistics dispatch.
+              </p>
+            )}
           </div>
 
           <div>
